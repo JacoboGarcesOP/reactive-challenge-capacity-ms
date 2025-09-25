@@ -52,8 +52,12 @@ public class Handler {
   }
 
   public Mono<ServerResponse> getAllCapacities(ServerRequest serverRequest) {
-    return getCapacityUseCase.execute()
-      .collectList()
+    int page = serverRequest.queryParam("page").map(Integer::parseInt).orElse(0);
+    int size = serverRequest.queryParam("size").map(Integer::parseInt).orElse(10);
+    String sortBy = serverRequest.queryParam("sortBy").orElse("name");
+    String order = serverRequest.queryParam("order").orElse("asc");
+
+    return getCapacityUseCase.execute(page, size, sortBy, order)
       .flatMap(this::buildSuccessResponse)
       .onErrorResume(DomainException.class, this::handleDomainException)
       .onErrorResume(BussinessException.class, this::handleBusinessException)
