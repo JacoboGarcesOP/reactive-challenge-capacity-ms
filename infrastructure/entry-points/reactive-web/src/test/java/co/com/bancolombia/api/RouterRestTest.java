@@ -1,5 +1,6 @@
 package co.com.bancolombia.api;
 
+import co.com.bancolombia.api.request.AssociateCapacityWithBootcampRequest;
 import co.com.bancolombia.api.request.CreateCapacityRequest;
 import co.com.bancolombia.model.capacity.Capacity;
 import co.com.bancolombia.model.capacity.Technology;
@@ -8,9 +9,11 @@ import co.com.bancolombia.model.capacity.gateway.TechnologyGateway;
 import co.com.bancolombia.model.capacity.values.Description;
 import co.com.bancolombia.model.capacity.values.Id;
 import co.com.bancolombia.model.capacity.values.Name;
+import co.com.bancolombia.usecase.AssociateCapacityWithBootcampUseCase;
 import co.com.bancolombia.usecase.CreateCapacityUseCase;
 import co.com.bancolombia.usecase.GetCapacityUseCase;
 import co.com.bancolombia.usecase.exception.BussinessException;
+import co.com.bancolombia.usecase.response.AssociateCapacityWithBootcampResponse;
 import co.com.bancolombia.usecase.response.CapacityResponse;
 import co.com.bancolombia.usecase.response.TechnologyResponse;
 import jakarta.validation.Validator;
@@ -52,14 +55,19 @@ class RouterRestTest {
     @Mock
     private TechnologyGateway technologyGateway;
 
+    @Mock
+    private AssociateCapacityWithBootcampUseCase associateCapacityWithBootcampUseCase;
+
     private RouterRest routerRest;
     private WebTestClient webTestClient;
 
     @BeforeEach
     void setUp() {
         routerRest = new RouterRest();
-        Handler handler = new Handler(createCapacityUseCase, getCapacityUseCase, validator);
-        RouterFunction<ServerResponse> routerFunction = routerRest.routerFunction(handler);
+        Handler handler = new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, validator);
+        RouterFunction<ServerResponse> routerFunction = routerRest.createCapacityRoute(handler)
+            .and(routerRest.getAllCapacitiesRoute(handler))
+            .and(routerRest.associateCapacityWithBootcampRoute(handler));
         webTestClient = WebTestClient.bindToRouterFunction(routerFunction).build();
     }
 
@@ -67,7 +75,9 @@ class RouterRestTest {
     @DisplayName("Should create router function with correct configuration")
     void shouldCreateRouterFunctionWithCorrectConfiguration() {
         // When
-        RouterFunction<ServerResponse> routerFunction = routerRest.routerFunction(new Handler(createCapacityUseCase, getCapacityUseCase, validator));
+        RouterFunction<ServerResponse> routerFunction = routerRest.createCapacityRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, validator))
+            .and(routerRest.getAllCapacitiesRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, validator)))
+            .and(routerRest.associateCapacityWithBootcampRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, validator)));
 
         // Then
         assert routerFunction != null;
@@ -552,7 +562,9 @@ class RouterRestTest {
     @DisplayName("Should verify router function is properly configured")
     void shouldVerifyRouterFunctionIsProperlyConfigured() {
         // When
-        RouterFunction<ServerResponse> routerFunction = routerRest.routerFunction(new Handler(createCapacityUseCase, getCapacityUseCase, validator));
+        RouterFunction<ServerResponse> routerFunction = routerRest.createCapacityRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, validator))
+            .and(routerRest.getAllCapacitiesRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, validator)))
+            .and(routerRest.associateCapacityWithBootcampRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, validator)));
 
         // Then
         assert routerFunction != null;
@@ -953,5 +965,46 @@ class RouterRestTest {
                 .jsonPath("$.filter.size").isEqualTo(10)
                 .jsonPath("$.filter.sortBy").isEqualTo("name")
                 .jsonPath("$.filter.order").isEqualTo("asc");
+    }
+
+    @Test
+    @DisplayName("POST /v1/api/capacity/associate should return 200 on success")
+    void postAssociateShouldReturn200() {
+        // Given
+        AssociateCapacityWithBootcampRequest request = new AssociateCapacityWithBootcampRequest(1L, 100L);
+        AssociateCapacityWithBootcampResponse response = new AssociateCapacityWithBootcampResponse(1L, "Payments Squad", "Handles all payment features", List.of(new TechnologyResponse(10L, "Java", "Java 21 LTS")), 100L);
+        when(associateCapacityWithBootcampUseCase.execute(any())).thenReturn(Mono.just(response));
+
+        // When & Then
+        webTestClient
+                .post()
+                .uri("/v1/api/capacity/associate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.capacityId").isEqualTo(1)
+                .jsonPath("$.bootcampId").isEqualTo(100);
+    }
+
+    @Test
+    @DisplayName("POST /v1/api/capacity/associate should return 400 when capacity not found")
+    void postAssociateShouldReturn400WhenCapacityNotFound() {
+        // Given
+        AssociateCapacityWithBootcampRequest request = new AssociateCapacityWithBootcampRequest(999L, 100L);
+        when(associateCapacityWithBootcampUseCase.execute(any())).thenReturn(Mono.error(new BussinessException("The capacity has not been found.")));
+
+        // When & Then
+        webTestClient
+                .post()
+                .uri("/v1/api/capacity/associate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("BUSINESS_ERROR")
+                .jsonPath("$.message").isEqualTo("The capacity has not been found.");
     }
 }

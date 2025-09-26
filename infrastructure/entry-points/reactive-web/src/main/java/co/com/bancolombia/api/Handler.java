@@ -1,11 +1,14 @@
 package co.com.bancolombia.api;
 
 
+import co.com.bancolombia.api.request.AssociateCapacityWithBootcampRequest;
 import co.com.bancolombia.api.response.ErrorResponse;
 import co.com.bancolombia.model.capacity.exception.DomainException;
+import co.com.bancolombia.usecase.AssociateCapacityWithBootcampUseCase;
 import co.com.bancolombia.usecase.CreateCapacityUseCase;
 import co.com.bancolombia.api.request.CreateCapacityRequest;
 import co.com.bancolombia.usecase.GetCapacityUseCase;
+import co.com.bancolombia.usecase.command.AssociateCapacityWithBootcampCommand;
 import co.com.bancolombia.usecase.command.CreateCapacityCommand;
 import co.com.bancolombia.usecase.exception.BussinessException;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,7 @@ public class Handler {
 
   private final CreateCapacityUseCase createCapacityUseCase;
   private final GetCapacityUseCase getCapacityUseCase;
+  private final AssociateCapacityWithBootcampUseCase associateCapacityWithBootcampUseCase;
   private final Validator validator;
 
   public Mono<ServerResponse> createCapacity(ServerRequest serverRequest) {
@@ -65,11 +69,35 @@ public class Handler {
       .doOnError(error -> log.error("Error retrieving capacities", error));
   }
 
+  public Mono<ServerResponse> associateTechnologyWithCapacity(ServerRequest serverRequest) {
+    return serverRequest.bodyToMono(AssociateCapacityWithBootcampRequest.class)
+      .doOnNext(this::validateAssociateRequest)
+      .map(this::mapToAssociateCommand)
+      .flatMap(associateCapacityWithBootcampUseCase::execute)
+      .flatMap(this::buildSuccessResponse)
+      .onErrorResume(ConstraintViolationException.class, this::handleValidationException)
+      .onErrorResume(DomainException.class, this::handleDomainException)
+      .onErrorResume(BussinessException.class, this::handleBusinessException)
+      .onErrorResume(Exception.class, this::handleGenericException)
+      .doOnError(error -> log.error(GENERIC_ERROR_MESSAGE, error));
+  }
+
+  private void validateAssociateRequest(AssociateCapacityWithBootcampRequest request) {
+    Set<ConstraintViolation<AssociateCapacityWithBootcampRequest>> violations = validator.validate(request);
+    if (!violations.isEmpty()) {
+      throw new ConstraintViolationException(violations);
+    }
+  }
+
   private void validateRequest(CreateCapacityRequest request) {
     Set<ConstraintViolation<CreateCapacityRequest>> violations = validator.validate(request);
     if (!violations.isEmpty()) {
       throw new ConstraintViolationException(violations);
     }
+  }
+
+  private AssociateCapacityWithBootcampCommand mapToAssociateCommand(AssociateCapacityWithBootcampRequest request) {
+    return new AssociateCapacityWithBootcampCommand(request.getCapacityId(), request.getBootcampId());
   }
 
   private CreateCapacityCommand mapToCommand(CreateCapacityRequest request) {
