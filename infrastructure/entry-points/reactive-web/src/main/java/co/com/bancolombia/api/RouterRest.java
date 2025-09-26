@@ -4,6 +4,7 @@ import co.com.bancolombia.api.request.CreateCapacityRequest;
 import co.com.bancolombia.api.request.AssociateCapacityWithBootcampRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -273,5 +274,90 @@ public class RouterRest {
   )
   public RouterFunction<ServerResponse> associateCapacityWithBootcampRoute(Handler handler) {
     return route(POST(BASE_URL + "/capacity/associate"), handler::associateTechnologyWithCapacity);
+  }
+
+  @Bean
+  @RouterOperation(
+    path = "/v1/api/capacity/bootcamp/{bootcampId}",
+    produces = {MediaType.APPLICATION_JSON_VALUE},
+    method = RequestMethod.GET,
+    beanClass = Handler.class,
+    beanMethod = "getCapacitiesByBootcamp",
+    operation = @Operation(
+      operationId = "getCapacitiesByBootcamp",
+      summary = "Obtener capacidades por bootcamp",
+      description = "Retorna todas las capacidades asociadas a un bootcamp específico con sus tecnologías. " +
+        "Maneja errores de dominio, negocio e internos.",
+      tags = {"Capacity Management"},
+      parameters = {
+        @Parameter(
+          name = "bootcampId", 
+          description = "ID del bootcamp para obtener sus capacidades", 
+          example = "100", 
+          required = true,
+          in = ParameterIn.PATH,
+          schema = @Schema(type = "integer", format = "int64")
+        )
+      },
+      responses = {
+        @ApiResponse(responseCode = "200", description = "Capacidades obtenidas exitosamente",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Success Response",
+              summary = "Lista de capacidades del bootcamp",
+              value = "[\n" +
+                "  {\n" +
+                "    \"capacityId\": 123,\n" +
+                "    \"name\": \"Payments Squad\",\n" +
+                "    \"description\": \"Handles all payment features\",\n" +
+                "    \"technologies\": [\n" +
+                "      { \"technologyId\": 10, \"name\": \"Java\", \"description\": \"Java 21 LTS\" },\n" +
+                "      { \"technologyId\": 11, \"name\": \"Spring Boot\", \"description\": \"Spring Boot Framework\" }\n" +
+                "    ]\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"capacityId\": 124,\n" +
+                "    \"name\": \"User Management\",\n" +
+                "    \"description\": \"Handles user operations\",\n" +
+                "    \"technologies\": [\n" +
+                "      { \"technologyId\": 12, \"name\": \"React\", \"description\": \"React Framework\" }\n" +
+                "    ]\n" +
+                "  }\n" +
+                "]"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "400", description = "Error de dominio o negocio",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Business Error",
+              summary = "Error de negocio",
+              value = "{\n" +
+                "  \"error\": \"BUSINESS_ERROR\",\n" +
+                "  \"message\": \"Bootcamp not found\"\n" +
+                "}"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Internal Error",
+              summary = "Error interno",
+              value = "{\n" +
+                "  \"error\": \"INTERNAL_ERROR\",\n" +
+                "  \"message\": \"An unexpected error occurred\"\n" +
+                "}"
+            )
+          )
+        )
+      }
+    )
+  )
+  public RouterFunction<ServerResponse> getCapacitiesByBootcampRoute(Handler handler) {
+    return route(GET(BASE_URL + "/capacity/bootcamp/{bootcampId}"), handler::getCapacitiesByBootcamp);
   }
 }

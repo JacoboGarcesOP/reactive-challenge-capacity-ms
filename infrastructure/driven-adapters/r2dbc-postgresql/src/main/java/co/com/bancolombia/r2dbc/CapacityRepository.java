@@ -13,7 +13,7 @@ public interface CapacityRepository extends ReactiveCrudRepository<CapacityEntit
   @Query("SELECT capacity_id, name, description FROM capacity_schema.capacity ORDER BY name ASC LIMIT :limit OFFSET :offset")
   Flux<CapacityEntity> findAllOrderByNameAsc(int limit, int offset);
 
-  @Query("SELECT t.* FROM capacity_schema.capacity c " +
+  @Query("SELECT c.* FROM capacity_schema.capacity c " +
     "JOIN capacity_schema.capacity_bootcamp cb ON c.capacity_id = cb.capacity_id " +
     "WHERE cb.bootcamp_id = :bootcampId")
   Flux<CapacityEntity> findByBootcamp(Long bootcampId);

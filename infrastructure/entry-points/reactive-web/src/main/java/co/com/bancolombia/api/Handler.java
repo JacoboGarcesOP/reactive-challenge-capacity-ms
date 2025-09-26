@@ -7,6 +7,7 @@ import co.com.bancolombia.model.capacity.exception.DomainException;
 import co.com.bancolombia.usecase.AssociateCapacityWithBootcampUseCase;
 import co.com.bancolombia.usecase.CreateCapacityUseCase;
 import co.com.bancolombia.api.request.CreateCapacityRequest;
+import co.com.bancolombia.usecase.GetCapacityByBootcampUseCase;
 import co.com.bancolombia.usecase.GetCapacityUseCase;
 import co.com.bancolombia.usecase.command.AssociateCapacityWithBootcampCommand;
 import co.com.bancolombia.usecase.command.CreateCapacityCommand;
@@ -40,6 +41,7 @@ public class Handler {
   private final CreateCapacityUseCase createCapacityUseCase;
   private final GetCapacityUseCase getCapacityUseCase;
   private final AssociateCapacityWithBootcampUseCase associateCapacityWithBootcampUseCase;
+  private final GetCapacityByBootcampUseCase getCapacityByBootcampUseCase;
   private final Validator validator;
 
   public Mono<ServerResponse> createCapacity(ServerRequest serverRequest) {
@@ -67,6 +69,18 @@ public class Handler {
       .onErrorResume(BussinessException.class, this::handleBusinessException)
       .onErrorResume(Exception.class, this::handleGenericException)
       .doOnError(error -> log.error("Error retrieving capacities", error));
+  }
+
+  public Mono<ServerResponse> getCapacitiesByBootcamp(ServerRequest serverRequest) {
+    Long bootcampId = Long.parseLong(serverRequest.pathVariable("bootcampId"));
+    
+    return getCapacityByBootcampUseCase.execute(bootcampId)
+      .collectList()
+      .flatMap(this::buildSuccessResponse)
+      .onErrorResume(DomainException.class, this::handleDomainException)
+      .onErrorResume(BussinessException.class, this::handleBusinessException)
+      .onErrorResume(Exception.class, this::handleGenericException)
+      .doOnError(error -> log.error("Error retrieving capacities by bootcamp", error));
   }
 
   public Mono<ServerResponse> associateTechnologyWithCapacity(ServerRequest serverRequest) {
