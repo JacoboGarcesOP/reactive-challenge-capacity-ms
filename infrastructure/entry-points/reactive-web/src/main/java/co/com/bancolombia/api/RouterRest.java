@@ -2,6 +2,7 @@ package co.com.bancolombia.api;
 
 import co.com.bancolombia.api.request.CreateCapacityRequest;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -118,36 +119,50 @@ public class RouterRest {
         beanMethod = "getAllCapacities",
         operation = @Operation(
             operationId = "getAllCapacities",
-            summary = "Obtener todas las capacidades",
-            description = "Retorna todas las capacidades con sus tecnologías asociadas. " +
+            summary = "Obtener capacidades paginadas y ordenadas",
+            description = "Retorna capacidades con sus tecnologías asociadas, soportando paginación y ordenamiento. " +
                 "Maneja errores de dominio, negocio e internos.",
             tags = {"Capacity Management"},
+            parameters = {
+                @Parameter(name = "page", description = "Número de página (base 0)", example = "0", schema = @Schema(type = "integer", defaultValue = "0")),
+                @Parameter(name = "size", description = "Tamaño de página", example = "10", schema = @Schema(type = "integer", defaultValue = "10")),
+                @Parameter(name = "sortBy", description = "Campo por el cual ordenar", example = "name", schema = @Schema(type = "string", allowableValues = {"name", "technologies"}, defaultValue = "name")),
+                @Parameter(name = "order", description = "Dirección del ordenamiento", example = "asc", schema = @Schema(type = "string", allowableValues = {"asc", "desc"}, defaultValue = "asc"))
+            },
             responses = {
                 @ApiResponse(responseCode = "200", description = "Capacidades obtenidas exitosamente",
                     content = @Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         examples = @ExampleObject(
                             name = "Success Response",
-                            summary = "Lista de capacidades",
-                            value = "[\n" +
-                                "  {\n" +
-                                "    \"capacityId\": 123,\n" +
-                                "    \"name\": \"Payments Squad\",\n" +
-                                "    \"description\": \"Handles all payment features\",\n" +
-                                "    \"technologies\": [\n" +
-                                "      { \"technologyId\": 10, \"name\": \"Java\", \"description\": \"Java 21 LTS\" },\n" +
-                                "      { \"technologyId\": 11, \"name\": \"Spring Boot\", \"description\": \"Spring Boot Framework\" }\n" +
-                                "    ]\n" +
-                                "  },\n" +
-                                "  {\n" +
-                                "    \"capacityId\": 124,\n" +
-                                "    \"name\": \"User Management\",\n" +
-                                "    \"description\": \"Handles user operations\",\n" +
-                                "    \"technologies\": [\n" +
-                                "      { \"technologyId\": 12, \"name\": \"React\", \"description\": \"React Framework\" }\n" +
-                                "    ]\n" +
+                            summary = "Lista de capacidades paginadas y ordenadas",
+                            value = "{\n" +
+                                "  \"capacities\": [\n" +
+                                "    {\n" +
+                                "      \"capacityId\": 123,\n" +
+                                "      \"name\": \"Payments Squad\",\n" +
+                                "      \"description\": \"Handles all payment features\",\n" +
+                                "      \"technologies\": [\n" +
+                                "        { \"technologyId\": 10, \"name\": \"Java\", \"description\": \"Java 21 LTS\" },\n" +
+                                "        { \"technologyId\": 11, \"name\": \"Spring Boot\", \"description\": \"Spring Boot Framework\" }\n" +
+                                "      ]\n" +
+                                "    },\n" +
+                                "    {\n" +
+                                "      \"capacityId\": 124,\n" +
+                                "      \"name\": \"User Management\",\n" +
+                                "      \"description\": \"Handles user operations\",\n" +
+                                "      \"technologies\": [\n" +
+                                "        { \"technologyId\": 12, \"name\": \"React\", \"description\": \"React Framework\" }\n" +
+                                "      ]\n" +
+                                "    }\n" +
+                                "  ],\n" +
+                                "  \"filter\": {\n" +
+                                "    \"page\": 0,\n" +
+                                "    \"size\": 10,\n" +
+                                "    \"sortBy\": \"name\",\n" +
+                                "    \"order\": \"asc\"\n" +
                                 "  }\n" +
-                                "]"
+                                "}"
                         )
                     )
                 ),

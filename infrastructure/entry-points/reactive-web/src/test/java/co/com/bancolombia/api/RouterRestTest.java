@@ -136,7 +136,7 @@ class RouterRestTest {
                 )
         );
 
-        when(getCapacityUseCase.execute()).thenReturn(Flux.just(response1, response2));
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.just(new co.com.bancolombia.usecase.response.GetCapacitiesResponse(List.of(response1, response2), new co.com.bancolombia.usecase.response.FilterResponse(0, 10, "name", "asc"))));
 
         // When & Then
         webTestClient
@@ -146,14 +146,18 @@ class RouterRestTest {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(2)
-                .jsonPath("$[0].capacityId").isEqualTo(1)
-                .jsonPath("$[0].name").isEqualTo("Test Capacity 1")
-                .jsonPath("$[0].technologies.length()").isEqualTo(2)
-                .jsonPath("$[1].capacityId").isEqualTo(2)
-                .jsonPath("$[1].name").isEqualTo("Test Capacity 2")
-                .jsonPath("$[1].technologies.length()").isEqualTo(1);
+                .jsonPath("$.capacities").isArray()
+                .jsonPath("$.capacities.length()").isEqualTo(2)
+                .jsonPath("$.capacities[0].capacityId").isEqualTo(1)
+                .jsonPath("$.capacities[0].name").isEqualTo("Test Capacity 1")
+                .jsonPath("$.capacities[0].technologies.length()").isEqualTo(2)
+                .jsonPath("$.capacities[1].capacityId").isEqualTo(2)
+                .jsonPath("$.capacities[1].name").isEqualTo("Test Capacity 2")
+                .jsonPath("$.capacities[1].technologies.length()").isEqualTo(1)
+                .jsonPath("$.filter.page").isEqualTo(0)
+                .jsonPath("$.filter.size").isEqualTo(10)
+                .jsonPath("$.filter.sortBy").isEqualTo("name")
+                .jsonPath("$.filter.order").isEqualTo("asc");
     }
 
     @Test
@@ -579,7 +583,7 @@ class RouterRestTest {
     @DisplayName("Should return empty list when no capacities exist")
     void shouldReturnEmptyListWhenNoCapacitiesExist() {
         // Given
-        when(getCapacityUseCase.execute()).thenReturn(Flux.empty());
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.just(new co.com.bancolombia.usecase.response.GetCapacitiesResponse(List.of(), new co.com.bancolombia.usecase.response.FilterResponse(0, 10, "name", "asc"))));
 
         // When & Then
         webTestClient
@@ -589,8 +593,12 @@ class RouterRestTest {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(0);
+                .jsonPath("$.capacities").isArray()
+                .jsonPath("$.capacities.length()").isEqualTo(0)
+                .jsonPath("$.filter.page").isEqualTo(0)
+                .jsonPath("$.filter.size").isEqualTo(10)
+                .jsonPath("$.filter.sortBy").isEqualTo("name")
+                .jsonPath("$.filter.order").isEqualTo("asc");
     }
 
     @Test
@@ -608,7 +616,7 @@ class RouterRestTest {
                 )
         );
 
-        when(getCapacityUseCase.execute()).thenReturn(Flux.just(response));
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.just(new co.com.bancolombia.usecase.response.GetCapacitiesResponse(List.of(response), new co.com.bancolombia.usecase.response.FilterResponse(0, 10, "name", "asc"))));
 
         // When & Then
         webTestClient
@@ -618,16 +626,20 @@ class RouterRestTest {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(1)
-                .jsonPath("$[0].capacityId").isEqualTo(1)
-                .jsonPath("$[0].name").isEqualTo("Single Capacity")
-                .jsonPath("$[0].description").isEqualTo("Single capacity description")
-                .jsonPath("$[0].technologies").isArray()
-                .jsonPath("$[0].technologies.length()").isEqualTo(3)
-                .jsonPath("$[0].technologies[0].technologyId").isEqualTo(1)
-                .jsonPath("$[0].technologies[0].name").isEqualTo("Java")
-                .jsonPath("$[0].technologies[0].description").isEqualTo("Java Programming Language");
+                .jsonPath("$.capacities").isArray()
+                .jsonPath("$.capacities.length()").isEqualTo(1)
+                .jsonPath("$.capacities[0].capacityId").isEqualTo(1)
+                .jsonPath("$.capacities[0].name").isEqualTo("Single Capacity")
+                .jsonPath("$.capacities[0].description").isEqualTo("Single capacity description")
+                .jsonPath("$.capacities[0].technologies").isArray()
+                .jsonPath("$.capacities[0].technologies.length()").isEqualTo(3)
+                .jsonPath("$.capacities[0].technologies[0].technologyId").isEqualTo(1)
+                .jsonPath("$.capacities[0].technologies[0].name").isEqualTo("Java")
+                .jsonPath("$.capacities[0].technologies[0].description").isEqualTo("Java Programming Language")
+                .jsonPath("$.filter.page").isEqualTo(0)
+                .jsonPath("$.filter.size").isEqualTo(10)
+                .jsonPath("$.filter.sortBy").isEqualTo("name")
+                .jsonPath("$.filter.order").isEqualTo("asc");
     }
 
     @Test
@@ -669,7 +681,7 @@ class RouterRestTest {
                 )
         );
 
-        when(getCapacityUseCase.execute()).thenReturn(Flux.just(response1, response2, response3));
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.just(new co.com.bancolombia.usecase.response.GetCapacitiesResponse(List.of(response1, response2, response3), new co.com.bancolombia.usecase.response.FilterResponse(0, 10, "name", "asc"))));
 
         // When & Then
         webTestClient
@@ -679,14 +691,18 @@ class RouterRestTest {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(3)
-                .jsonPath("$[0].name").isEqualTo("Backend Capacity")
-                .jsonPath("$[0].technologies.length()").isEqualTo(4)
-                .jsonPath("$[1].name").isEqualTo("Frontend Capacity")
-                .jsonPath("$[1].technologies.length()").isEqualTo(2)
-                .jsonPath("$[2].name").isEqualTo("DevOps Capacity")
-                .jsonPath("$[2].technologies.length()").isEqualTo(5);
+                .jsonPath("$.capacities").isArray()
+                .jsonPath("$.capacities.length()").isEqualTo(3)
+                .jsonPath("$.capacities[0].name").isEqualTo("Backend Capacity")
+                .jsonPath("$.capacities[0].technologies.length()").isEqualTo(4)
+                .jsonPath("$.capacities[1].name").isEqualTo("Frontend Capacity")
+                .jsonPath("$.capacities[1].technologies.length()").isEqualTo(2)
+                .jsonPath("$.capacities[2].name").isEqualTo("DevOps Capacity")
+                .jsonPath("$.capacities[2].technologies.length()").isEqualTo(5)
+                .jsonPath("$.filter.page").isEqualTo(0)
+                .jsonPath("$.filter.size").isEqualTo(10)
+                .jsonPath("$.filter.sortBy").isEqualTo("name")
+                .jsonPath("$.filter.order").isEqualTo("asc");
     }
 
     @Test
@@ -700,7 +716,7 @@ class RouterRestTest {
                 List.of()
         );
 
-        when(getCapacityUseCase.execute()).thenReturn(Flux.just(response));
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.just(new co.com.bancolombia.usecase.response.GetCapacitiesResponse(List.of(response), new co.com.bancolombia.usecase.response.FilterResponse(0, 10, "name", "asc"))));
 
         // When & Then
         webTestClient
@@ -710,12 +726,16 @@ class RouterRestTest {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(1)
-                .jsonPath("$[0].capacityId").isEqualTo(1)
-                .jsonPath("$[0].name").isEqualTo("Empty Tech Capacity")
-                .jsonPath("$[0].technologies").isArray()
-                .jsonPath("$[0].technologies.length()").isEqualTo(0);
+                .jsonPath("$.capacities").isArray()
+                .jsonPath("$.capacities.length()").isEqualTo(1)
+                .jsonPath("$.capacities[0].capacityId").isEqualTo(1)
+                .jsonPath("$.capacities[0].name").isEqualTo("Empty Tech Capacity")
+                .jsonPath("$.capacities[0].technologies").isArray()
+                .jsonPath("$.capacities[0].technologies.length()").isEqualTo(0)
+                .jsonPath("$.filter.page").isEqualTo(0)
+                .jsonPath("$.filter.size").isEqualTo(10)
+                .jsonPath("$.filter.sortBy").isEqualTo("name")
+                .jsonPath("$.filter.order").isEqualTo("asc");
     }
 
     @Test
@@ -733,7 +753,7 @@ class RouterRestTest {
                 )
         );
 
-        when(getCapacityUseCase.execute()).thenReturn(Flux.just(response));
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.just(new co.com.bancolombia.usecase.response.GetCapacitiesResponse(List.of(response), new co.com.bancolombia.usecase.response.FilterResponse(0, 10, "name", "asc"))));
 
         // When & Then
         webTestClient
@@ -743,11 +763,15 @@ class RouterRestTest {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
-                .jsonPath("$[0].name").isEqualTo("Capacity with Special Chars: @#$%^&*()")
-                .jsonPath("$[0].description").isEqualTo("Description with special chars: áéíóú ñ")
-                .jsonPath("$[0].technologies[0].name").isEqualTo("Java 21")
-                .jsonPath("$[0].technologies[1].name").isEqualTo("Spring-Boot")
-                .jsonPath("$[0].technologies[2].name").isEqualTo("PostgreSQL 15");
+                .jsonPath("$.capacities[0].name").isEqualTo("Capacity with Special Chars: @#$%^&*()")
+                .jsonPath("$.capacities[0].description").isEqualTo("Description with special chars: áéíóú ñ")
+                .jsonPath("$.capacities[0].technologies[0].name").isEqualTo("Java 21")
+                .jsonPath("$.capacities[0].technologies[1].name").isEqualTo("Spring-Boot")
+                .jsonPath("$.capacities[0].technologies[2].name").isEqualTo("PostgreSQL 15")
+                .jsonPath("$.filter.page").isEqualTo(0)
+                .jsonPath("$.filter.size").isEqualTo(10)
+                .jsonPath("$.filter.sortBy").isEqualTo("name")
+                .jsonPath("$.filter.order").isEqualTo("asc");
     }
 
     @Test
@@ -764,7 +788,7 @@ class RouterRestTest {
                 List.of(new TechnologyResponse(1L, "Java", "Java Programming Language"))
         );
 
-        when(getCapacityUseCase.execute()).thenReturn(Flux.just(response));
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.just(new co.com.bancolombia.usecase.response.GetCapacitiesResponse(List.of(response), new co.com.bancolombia.usecase.response.FilterResponse(0, 10, "name", "asc"))));
 
         // When & Then
         webTestClient
@@ -774,8 +798,12 @@ class RouterRestTest {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
-                .jsonPath("$[0].name").isEqualTo(longName)
-                .jsonPath("$[0].description").isEqualTo(longDescription);
+                .jsonPath("$.capacities[0].name").isEqualTo(longName)
+                .jsonPath("$.capacities[0].description").isEqualTo(longDescription)
+                .jsonPath("$.filter.page").isEqualTo(0)
+                .jsonPath("$.filter.size").isEqualTo(10)
+                .jsonPath("$.filter.sortBy").isEqualTo("name")
+                .jsonPath("$.filter.order").isEqualTo("asc");
     }
 
     @Test
@@ -796,7 +824,7 @@ class RouterRestTest {
                 List.of(new TechnologyResponse(2L, "Python", "Python Programming Language"))
         );
 
-        when(getCapacityUseCase.execute()).thenReturn(Flux.just(response1, response2));
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.just(new co.com.bancolombia.usecase.response.GetCapacitiesResponse(List.of(response1, response2), new co.com.bancolombia.usecase.response.FilterResponse(0, 10, "name", "asc"))));
 
         // When & Then - Both requests should be handled
         webTestClient
@@ -805,7 +833,11 @@ class RouterRestTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.length()").isEqualTo(2);
+                .jsonPath("$.capacities.length()").isEqualTo(2)
+                .jsonPath("$.filter.page").isEqualTo(0)
+                .jsonPath("$.filter.size").isEqualTo(10)
+                .jsonPath("$.filter.sortBy").isEqualTo("name")
+                .jsonPath("$.filter.order").isEqualTo("asc");
 
         webTestClient
                 .get()
@@ -827,7 +859,7 @@ class RouterRestTest {
                 List.of(new TechnologyResponse(1L, "Java", "Java Programming Language"))
         );
 
-        when(getCapacityUseCase.execute()).thenReturn(Flux.just(response));
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.just(new co.com.bancolombia.usecase.response.GetCapacitiesResponse(List.of(response), new co.com.bancolombia.usecase.response.FilterResponse(0, 10, "name", "asc"))));
 
         // When & Then
         webTestClient
@@ -840,14 +872,18 @@ class RouterRestTest {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
-                .jsonPath("$[0].name").isEqualTo("Headers Test");
+                .jsonPath("$.capacities[0].name").isEqualTo("Headers Test")
+                .jsonPath("$.filter.page").isEqualTo(0)
+                .jsonPath("$.filter.size").isEqualTo(10)
+                .jsonPath("$.filter.sortBy").isEqualTo("name")
+                .jsonPath("$.filter.order").isEqualTo("asc");
     }
 
     @Test
     @DisplayName("Should handle business exception when retrieving capacities")
     void shouldHandleBusinessExceptionWhenRetrievingCapacities() {
         // Given
-        when(getCapacityUseCase.execute()).thenReturn(Flux.error(new BussinessException("No capacities found")));
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.error(new BussinessException("No capacities found")));
 
         // When & Then
         webTestClient
@@ -865,7 +901,7 @@ class RouterRestTest {
     @DisplayName("Should handle domain exception when retrieving capacities")
     void shouldHandleDomainExceptionWhenRetrievingCapacities() {
         // Given
-        when(getCapacityUseCase.execute()).thenReturn(Flux.error(new RuntimeException("Database connection failed")));
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.error(new RuntimeException("Database connection failed")));
 
         // When & Then
         webTestClient
@@ -883,7 +919,7 @@ class RouterRestTest {
     @DisplayName("Should handle generic exception when retrieving capacities")
     void shouldHandleGenericExceptionWhenRetrievingCapacities() {
         // Given
-        when(getCapacityUseCase.execute()).thenReturn(Flux.error(new IllegalStateException("Unexpected error")));
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.error(new IllegalStateException("Unexpected error")));
 
         // When & Then
         webTestClient
@@ -901,7 +937,7 @@ class RouterRestTest {
     @DisplayName("Should handle empty response from use case")
     void shouldHandleEmptyResponseFromUseCase() {
         // Given
-        when(getCapacityUseCase.execute()).thenReturn(Flux.empty());
+        when(getCapacityUseCase.execute(0, 10, "name", "asc")).thenReturn(Mono.just(new co.com.bancolombia.usecase.response.GetCapacitiesResponse(List.of(), new co.com.bancolombia.usecase.response.FilterResponse(0, 10, "name", "asc"))));
 
         // When & Then
         webTestClient
@@ -911,7 +947,11 @@ class RouterRestTest {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
-                .jsonPath("$").isArray()
-                .jsonPath("$.length()").isEqualTo(0);
+                .jsonPath("$.capacities").isArray()
+                .jsonPath("$.capacities.length()").isEqualTo(0)
+                .jsonPath("$.filter.page").isEqualTo(0)
+                .jsonPath("$.filter.size").isEqualTo(10)
+                .jsonPath("$.filter.sortBy").isEqualTo("name")
+                .jsonPath("$.filter.order").isEqualTo("asc");
     }
 }

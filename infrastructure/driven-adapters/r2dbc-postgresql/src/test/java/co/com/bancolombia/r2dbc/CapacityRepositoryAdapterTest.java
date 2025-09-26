@@ -44,6 +44,58 @@ class CapacityRepositoryAdapterTest {
   }
 
   @Test
+  @DisplayName("Should keep page slice stable and reverse in-memory when order=desc")
+  void shouldKeepPageSliceStableAndReverseInMemoryWhenOrderDesc() {
+    // Given: DB returns ASC slice for page 0 size 5
+    List<CapacityEntity> ascSlice = List.of(
+      new CapacityEntity(1L, "Authentication", "Auth description"),
+      new CapacityEntity(2L, "Backend", "Backend description"),
+      new CapacityEntity(3L, "Content", "Content description"),
+      new CapacityEntity(4L, "Data", "Data description"),
+      new CapacityEntity(5L, "Engine", "Engine description")
+    );
+
+    when(capacityRepository.findAllOrderByNameAsc(5, 0)).thenReturn(Flux.fromIterable(ascSlice));
+
+    // When
+    Flux<Capacity> result = capacityRepositoryAdapter.findAllPagedSorted(0, 5, "name", "desc");
+
+    // Then: same 5 elements but reversed order
+    StepVerifier.create(result)
+      .assertNext(c -> assertThat(c.getName().getValue()).isEqualTo("Engine"))
+      .assertNext(c -> assertThat(c.getName().getValue()).isEqualTo("Data"))
+      .assertNext(c -> assertThat(c.getName().getValue()).isEqualTo("Content"))
+      .assertNext(c -> assertThat(c.getName().getValue()).isEqualTo("Backend"))
+      .assertNext(c -> assertThat(c.getName().getValue()).isEqualTo("Authentication"))
+      .verifyComplete();
+  }
+
+  @Test
+  @DisplayName("Should return ASC page slice when order=asc")
+  void shouldReturnAscPageSliceWhenOrderAsc() {
+    // Given
+    List<CapacityEntity> ascSlice = List.of(
+      new CapacityEntity(1L, "Authentication", "Auth description"),
+      new CapacityEntity(2L, "Backend", "Backend description"),
+      new CapacityEntity(3L, "Content", "Content description"),
+      new CapacityEntity(4L, "Data", "Data description"),
+      new CapacityEntity(5L, "Engine", "Engine description")
+    );
+    when(capacityRepository.findAllOrderByNameAsc(5, 0)).thenReturn(Flux.fromIterable(ascSlice));
+
+    // When
+    Flux<Capacity> result = capacityRepositoryAdapter.findAllPagedSorted(0, 5, "name", "asc");
+
+    // Then
+    StepVerifier.create(result)
+      .assertNext(c -> assertThat(c.getName().getValue()).isEqualTo("Authentication"))
+      .assertNext(c -> assertThat(c.getName().getValue()).isEqualTo("Backend"))
+      .assertNext(c -> assertThat(c.getName().getValue()).isEqualTo("Content"))
+      .assertNext(c -> assertThat(c.getName().getValue()).isEqualTo("Data"))
+      .assertNext(c -> assertThat(c.getName().getValue()).isEqualTo("Engine"))
+      .verifyComplete();
+  }
+
   @DisplayName("Should return true when capacity exists by name")
   void shouldReturnTrueWhenCapacityExistsByName() {
     // Given
