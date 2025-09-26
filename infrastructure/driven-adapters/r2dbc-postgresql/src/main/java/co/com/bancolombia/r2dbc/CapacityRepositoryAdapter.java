@@ -34,4 +34,24 @@ public class CapacityRepositoryAdapter implements CapacityGateway {
   public Flux<Capacity> findAll() {
     return capacityRepository.findAll().map(entity -> new Capacity(entity.getId(), entity.getName(), entity.getDescription()));
   }
+
+  @Override
+  public Flux<Capacity> findAllPagedSorted(int page, int size, String sortBy, String order) {
+    int limit = Math.max(size, 0);
+    int offset = Math.max(page, 0) * limit;
+
+    if ("desc".equalsIgnoreCase(order)) {
+      return capacityRepository
+        .findAllOrderByNameAsc(limit, offset)
+        .collectList()
+        .flatMapMany(list -> {
+          java.util.Collections.reverse(list);
+          return reactor.core.publisher.Flux.fromIterable(list);
+        })
+        .map(entity -> new Capacity(entity.getId(), entity.getName(), entity.getDescription()));
+    }
+    return capacityRepository
+      .findAllOrderByNameAsc(limit, offset)
+      .map(entity -> new Capacity(entity.getId(), entity.getName(), entity.getDescription()));
+  }
 }
