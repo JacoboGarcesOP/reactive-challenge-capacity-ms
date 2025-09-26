@@ -51,11 +51,21 @@ public class CreateCapacityUseCase {
           .flatMap(valid -> capacityGateway.save(new Capacity(command.getName(), command.getDescription()))
           .flatMap(capacity -> Flux
             .fromIterable(command.getTechnologyNames())
-            .flatMap(t -> technologyGateway.associateTechnology(new CapacityTechnology(t, capacity.getId().getValue())))
+            .flatMap(t -> technologyGateway.associateTechnology(new CapacityTechnology(t, capacity.getId().getValue())), 20)
             .collectList()
             .map(technologies -> new CapacityResponse(
               capacity.getId().getValue(),
-              capacity.getName().getValue(), capacity.getDescription().getValue(), technologies.stream().map(technology -> new TechnologyResponse(technology.getId().getValue(), technology.getName().getValue(), technology.getDescription().getValue())).toList()))
+              capacity.getName().getValue(),
+              capacity.getDescription().getValue(),
+              technologies
+                .stream()
+                .map(technology -> new TechnologyResponse(
+                  technology.getId().getValue(),
+                  technology.getName().getValue(),
+                  technology.getDescription().getValue())
+                ).toList()
+              )
+            )
           ));
       });
   }
