@@ -1,5 +1,6 @@
 package co.com.bancolombia.api;
 
+import co.com.bancolombia.api.request.AssociateCapacityWithBootcampRequest;
 import co.com.bancolombia.api.request.CreateCapacityRequest;
 import co.com.bancolombia.model.capacity.Capacity;
 import co.com.bancolombia.model.capacity.Technology;
@@ -8,9 +9,12 @@ import co.com.bancolombia.model.capacity.gateway.TechnologyGateway;
 import co.com.bancolombia.model.capacity.values.Description;
 import co.com.bancolombia.model.capacity.values.Id;
 import co.com.bancolombia.model.capacity.values.Name;
+import co.com.bancolombia.usecase.AssociateCapacityWithBootcampUseCase;
 import co.com.bancolombia.usecase.CreateCapacityUseCase;
 import co.com.bancolombia.usecase.GetCapacityUseCase;
+import co.com.bancolombia.usecase.GetCapacityByBootcampUseCase;
 import co.com.bancolombia.usecase.exception.BussinessException;
+import co.com.bancolombia.usecase.response.AssociateCapacityWithBootcampResponse;
 import co.com.bancolombia.usecase.response.CapacityResponse;
 import co.com.bancolombia.usecase.response.TechnologyResponse;
 import jakarta.validation.Validator;
@@ -52,14 +56,23 @@ class RouterRestTest {
     @Mock
     private TechnologyGateway technologyGateway;
 
+    @Mock
+    private AssociateCapacityWithBootcampUseCase associateCapacityWithBootcampUseCase;
+
+    @Mock
+    private GetCapacityByBootcampUseCase getCapacityByBootcampUseCase;
+
     private RouterRest routerRest;
     private WebTestClient webTestClient;
 
     @BeforeEach
     void setUp() {
         routerRest = new RouterRest();
-        Handler handler = new Handler(createCapacityUseCase, getCapacityUseCase, validator);
-        RouterFunction<ServerResponse> routerFunction = routerRest.routerFunction(handler);
+        Handler handler = new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator);
+        RouterFunction<ServerResponse> routerFunction = routerRest.createCapacityRoute(handler)
+            .and(routerRest.getAllCapacitiesRoute(handler))
+            .and(routerRest.associateCapacityWithBootcampRoute(handler))
+            .and(routerRest.getCapacitiesByBootcampRoute(handler));
         webTestClient = WebTestClient.bindToRouterFunction(routerFunction).build();
     }
 
@@ -67,7 +80,9 @@ class RouterRestTest {
     @DisplayName("Should create router function with correct configuration")
     void shouldCreateRouterFunctionWithCorrectConfiguration() {
         // When
-        RouterFunction<ServerResponse> routerFunction = routerRest.routerFunction(new Handler(createCapacityUseCase, getCapacityUseCase, validator));
+        RouterFunction<ServerResponse> routerFunction = routerRest.createCapacityRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator))
+            .and(routerRest.getAllCapacitiesRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator)))
+            .and(routerRest.associateCapacityWithBootcampRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator)));
 
         // Then
         assert routerFunction != null;
@@ -552,7 +567,9 @@ class RouterRestTest {
     @DisplayName("Should verify router function is properly configured")
     void shouldVerifyRouterFunctionIsProperlyConfigured() {
         // When
-        RouterFunction<ServerResponse> routerFunction = routerRest.routerFunction(new Handler(createCapacityUseCase, getCapacityUseCase, validator));
+        RouterFunction<ServerResponse> routerFunction = routerRest.createCapacityRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator))
+            .and(routerRest.getAllCapacitiesRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator)))
+            .and(routerRest.associateCapacityWithBootcampRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator)));
 
         // Then
         assert routerFunction != null;
@@ -953,5 +970,189 @@ class RouterRestTest {
                 .jsonPath("$.filter.size").isEqualTo(10)
                 .jsonPath("$.filter.sortBy").isEqualTo("name")
                 .jsonPath("$.filter.order").isEqualTo("asc");
+    }
+
+    @Test
+    @DisplayName("POST /v1/api/capacity/associate should return 200 on success")
+    void postAssociateShouldReturn200() {
+        // Given
+        AssociateCapacityWithBootcampRequest request = new AssociateCapacityWithBootcampRequest(1L, 100L);
+        AssociateCapacityWithBootcampResponse response = new AssociateCapacityWithBootcampResponse(1L, "Payments Squad", "Handles all payment features", List.of(new TechnologyResponse(10L, "Java", "Java 21 LTS")), 100L);
+        when(associateCapacityWithBootcampUseCase.execute(any())).thenReturn(Mono.just(response));
+
+        // When & Then
+        webTestClient
+                .post()
+                .uri("/v1/api/capacity/associate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.capacityId").isEqualTo(1)
+                .jsonPath("$.bootcampId").isEqualTo(100);
+    }
+
+    @Test
+    @DisplayName("POST /v1/api/capacity/associate should return 400 when capacity not found")
+    void postAssociateShouldReturn400WhenCapacityNotFound() {
+        // Given
+        AssociateCapacityWithBootcampRequest request = new AssociateCapacityWithBootcampRequest(999L, 100L);
+        when(associateCapacityWithBootcampUseCase.execute(any())).thenReturn(Mono.error(new BussinessException("The capacity has not been found.")));
+
+        // When & Then
+        webTestClient
+                .post()
+                .uri("/v1/api/capacity/associate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("BUSINESS_ERROR")
+                .jsonPath("$.message").isEqualTo("The capacity has not been found.");
+    }
+
+    // ========== GET /v1/api/capacity/bootcamp/{bootcampId} Tests ==========
+
+    @Test
+    @DisplayName("GET /v1/api/capacity/bootcamp/{bootcampId} should return 200 with capacities")
+    void getCapacitiesByBootcampShouldReturn200() {
+        // Given
+        Long bootcampId = 100L;
+        CapacityResponse response1 = new CapacityResponse(
+                1L,
+                "Backend Capacity",
+                "Backend development capacity",
+                List.of(
+                        new TechnologyResponse(1L, "Java", "Java Programming Language"),
+                        new TechnologyResponse(2L, "Spring Boot", "Spring Boot Framework")
+                )
+        );
+
+        CapacityResponse response2 = new CapacityResponse(
+                2L,
+                "Frontend Capacity",
+                "Frontend development capacity",
+                List.of(
+                        new TechnologyResponse(3L, "React", "React Framework"),
+                        new TechnologyResponse(4L, "TypeScript", "TypeScript Language")
+                )
+        );
+
+        when(getCapacityByBootcampUseCase.execute(bootcampId)).thenReturn(Flux.just(response1, response2));
+
+        // When & Then
+        webTestClient
+                .get()
+                .uri("/v1/api/capacity/bootcamp/" + bootcampId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$").isArray()
+                .jsonPath("$.length()").isEqualTo(2)
+                .jsonPath("$[0].capacityId").isEqualTo(1)
+                .jsonPath("$[0].name").isEqualTo("Backend Capacity")
+                .jsonPath("$[0].technologies.length()").isEqualTo(2)
+                .jsonPath("$[1].capacityId").isEqualTo(2)
+                .jsonPath("$[1].name").isEqualTo("Frontend Capacity")
+                .jsonPath("$[1].technologies.length()").isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("GET /v1/api/capacity/bootcamp/{bootcampId} should return empty list when no capacities")
+    void getCapacitiesByBootcampShouldReturnEmptyList() {
+        // Given
+        Long bootcampId = 999L;
+        when(getCapacityByBootcampUseCase.execute(bootcampId)).thenReturn(Flux.empty());
+
+        // When & Then
+        webTestClient
+                .get()
+                .uri("/v1/api/capacity/bootcamp/" + bootcampId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$").isArray()
+                .jsonPath("$.length()").isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("GET /v1/api/capacity/bootcamp/{bootcampId} should return 400 on business error")
+    void getCapacitiesByBootcampShouldReturn400OnBusinessError() {
+        // Given
+        Long bootcampId = 100L;
+        when(getCapacityByBootcampUseCase.execute(bootcampId)).thenReturn(Flux.error(new BussinessException("Bootcamp not found")));
+
+        // When & Then
+        webTestClient
+                .get()
+                .uri("/v1/api/capacity/bootcamp/" + bootcampId)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("BUSINESS_ERROR")
+                .jsonPath("$.message").isEqualTo("Bootcamp not found");
+    }
+
+    @Test
+    @DisplayName("GET /v1/api/capacity/bootcamp/{bootcampId} should return 500 on internal error")
+    void getCapacitiesByBootcampShouldReturn500OnInternalError() {
+        // Given
+        Long bootcampId = 100L;
+        when(getCapacityByBootcampUseCase.execute(bootcampId)).thenReturn(Flux.error(new RuntimeException("Database connection failed")));
+
+        // When & Then
+        webTestClient
+                .get()
+                .uri("/v1/api/capacity/bootcamp/" + bootcampId)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("INTERNAL_ERROR")
+                .jsonPath("$.message").isEqualTo("An unexpected error occurred");
+    }
+
+    @Test
+    @DisplayName("GET /v1/api/capacity/bootcamp/{bootcampId} should handle invalid bootcamp ID")
+    void getCapacitiesByBootcampShouldHandleInvalidBootcampId() {
+        // When & Then
+        webTestClient
+                .get()
+                .uri("/v1/api/capacity/bootcamp/invalid")
+                .exchange()
+                .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    @DisplayName("GET /v1/api/capacity/bootcamp/{bootcampId} should handle capacity with no technologies")
+    void getCapacitiesByBootcampShouldHandleCapacityWithNoTechnologies() {
+        // Given
+        Long bootcampId = 100L;
+        CapacityResponse response = new CapacityResponse(
+                1L,
+                "Empty Tech Capacity",
+                "Capacity with no technologies",
+                List.of()
+        );
+
+        when(getCapacityByBootcampUseCase.execute(bootcampId)).thenReturn(Flux.just(response));
+
+        // When & Then
+        webTestClient
+                .get()
+                .uri("/v1/api/capacity/bootcamp/" + bootcampId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$[0].capacityId").isEqualTo(1)
+                .jsonPath("$[0].name").isEqualTo("Empty Tech Capacity")
+                .jsonPath("$[0].technologies").isArray()
+                .jsonPath("$[0].technologies.length()").isEqualTo(0);
     }
 }

@@ -1,9 +1,11 @@
 package co.com.bancolombia.r2dbc;
 
 import co.com.bancolombia.model.capacity.Capacity;
+import co.com.bancolombia.model.capacity.CapacityBootcamp;
 import co.com.bancolombia.model.capacity.values.Description;
 import co.com.bancolombia.model.capacity.values.Id;
 import co.com.bancolombia.model.capacity.values.Name;
+import co.com.bancolombia.r2dbc.entity.CapacityBootcampEntity;
 import co.com.bancolombia.r2dbc.entity.CapacityEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +33,9 @@ class CapacityRepositoryAdapterTest {
   @Mock
   private CapacityRepository capacityRepository;
 
+  @Mock
+  private CapacityBootcampRepository capacityBootcampRepository;
+
   @InjectMocks
   private CapacityRepositoryAdapter capacityRepositoryAdapter;
 
@@ -41,6 +46,44 @@ class CapacityRepositoryAdapterTest {
   void setUp() {
     testCapacity = new Capacity("Test Capacity", "Test Description");
     testCapacityEntity = new CapacityEntity(1L, "Test Capacity", "Test Description");
+  }
+
+  @Test
+  @DisplayName("Should map associateCapacityBootcamp correctly")
+  void shouldMapAssociateCapacityBootcampCorrectly() {
+    // Given
+    CapacityBootcampEntity saved = new CapacityBootcampEntity(null, 100L, 1L);
+    when(capacityBootcampRepository.save(any(CapacityBootcampEntity.class))).thenReturn(Mono.just(saved));
+
+    // When
+    Mono<CapacityBootcamp> result = capacityRepositoryAdapter.associateCapacityBootcamp(new CapacityBootcamp(100L, 1L));
+
+    // Then
+    StepVerifier.create(result)
+      .assertNext(cb -> {
+        org.assertj.core.api.Assertions.assertThat(cb.getBootcampId().getValue()).isEqualTo(100L);
+        org.assertj.core.api.Assertions.assertThat(cb.getCapacityId().getValue()).isEqualTo(1L);
+      })
+      .verifyComplete();
+  }
+
+  @Test
+  @DisplayName("Should find association by bootcamp and capacity")
+  void shouldFindAssociationByBootcampAndCapacity() {
+    // Given
+    CapacityBootcampEntity entity = new CapacityBootcampEntity(null, 200L, 2L);
+    when(capacityBootcampRepository.findByBootcampIdAndCapacityId(200L, 2L)).thenReturn(Mono.just(entity));
+
+    // When
+    Mono<CapacityBootcamp> result = capacityRepositoryAdapter.findByBootcampIdAndCapacityId(200L, 2L);
+
+    // Then
+    StepVerifier.create(result)
+      .assertNext(cb -> {
+        org.assertj.core.api.Assertions.assertThat(cb.getBootcampId().getValue()).isEqualTo(200L);
+        org.assertj.core.api.Assertions.assertThat(cb.getCapacityId().getValue()).isEqualTo(2L);
+      })
+      .verifyComplete();
   }
 
   @Test
