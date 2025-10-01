@@ -11,7 +11,9 @@ import co.com.bancolombia.model.capacity.values.Id;
 import co.com.bancolombia.model.capacity.values.Name;
 import co.com.bancolombia.usecase.AssociateCapacityWithBootcampUseCase;
 import co.com.bancolombia.usecase.CreateCapacityUseCase;
+import co.com.bancolombia.usecase.DeleteCapacityUseCase;
 import co.com.bancolombia.usecase.GetCapacityUseCase;
+import co.com.bancolombia.usecase.GetAllCapacityIdsUseCase;
 import co.com.bancolombia.usecase.GetCapacityByBootcampUseCase;
 import co.com.bancolombia.usecase.exception.BussinessException;
 import co.com.bancolombia.usecase.response.AssociateCapacityWithBootcampResponse;
@@ -62,15 +64,22 @@ class RouterRestTest {
     @Mock
     private GetCapacityByBootcampUseCase getCapacityByBootcampUseCase;
 
+    @Mock
+    private GetAllCapacityIdsUseCase getAllCapacityIdsUseCase;
+
+    @Mock
+    private DeleteCapacityUseCase deleteCapacityUseCase;
+
     private RouterRest routerRest;
     private WebTestClient webTestClient;
 
     @BeforeEach
     void setUp() {
         routerRest = new RouterRest();
-        Handler handler = new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator);
+        Handler handler = new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, getAllCapacityIdsUseCase, deleteCapacityUseCase, validator);
         RouterFunction<ServerResponse> routerFunction = routerRest.createCapacityRoute(handler)
             .and(routerRest.getAllCapacitiesRoute(handler))
+            .and(routerRest.getAllCapacityIdsRoute(handler))
             .and(routerRest.associateCapacityWithBootcampRoute(handler))
             .and(routerRest.getCapacitiesByBootcampRoute(handler));
         webTestClient = WebTestClient.bindToRouterFunction(routerFunction).build();
@@ -80,12 +89,31 @@ class RouterRestTest {
     @DisplayName("Should create router function with correct configuration")
     void shouldCreateRouterFunctionWithCorrectConfiguration() {
         // When
-        RouterFunction<ServerResponse> routerFunction = routerRest.createCapacityRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator))
-            .and(routerRest.getAllCapacitiesRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator)))
-            .and(routerRest.associateCapacityWithBootcampRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator)));
-
+        RouterFunction<ServerResponse> routerFunction = routerRest.createCapacityRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, getAllCapacityIdsUseCase, deleteCapacityUseCase, validator))
+            .and(routerRest.getAllCapacitiesRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, getAllCapacityIdsUseCase, deleteCapacityUseCase, validator)))
+            .and(routerRest.getAllCapacityIdsRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, getAllCapacityIdsUseCase, deleteCapacityUseCase, validator)))
+            .and(routerRest.associateCapacityWithBootcampRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, getAllCapacityIdsUseCase, deleteCapacityUseCase, validator)));
         // Then
         assert routerFunction != null;
+    }
+
+    @Test
+    @DisplayName("Should accept GET requests to /v1/api/capacity/ids endpoint")
+    void shouldAcceptGetRequestsToCapacityIdsEndpoint() {
+        // Given
+        when(getAllCapacityIdsUseCase.execute()).thenReturn(Flux.just(1L, 2L, 3L));
+
+        // When & Then
+        webTestClient
+                .get()
+                .uri("/v1/api/capacity/ids")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$[0]").isEqualTo(1)
+                .jsonPath("$[1]").isEqualTo(2)
+                .jsonPath("$[2]").isEqualTo(3);
     }
 
     @Test
@@ -567,9 +595,9 @@ class RouterRestTest {
     @DisplayName("Should verify router function is properly configured")
     void shouldVerifyRouterFunctionIsProperlyConfigured() {
         // When
-        RouterFunction<ServerResponse> routerFunction = routerRest.createCapacityRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator))
-            .and(routerRest.getAllCapacitiesRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator)))
-            .and(routerRest.associateCapacityWithBootcampRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, validator)));
+        RouterFunction<ServerResponse> routerFunction = routerRest.createCapacityRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, getAllCapacityIdsUseCase, deleteCapacityUseCase, validator))
+            .and(routerRest.getAllCapacitiesRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, getAllCapacityIdsUseCase, deleteCapacityUseCase, validator)))
+            .and(routerRest.associateCapacityWithBootcampRoute(new Handler(createCapacityUseCase, getCapacityUseCase, associateCapacityWithBootcampUseCase, getCapacityByBootcampUseCase, getAllCapacityIdsUseCase, deleteCapacityUseCase, validator)));
 
         // Then
         assert routerFunction != null;

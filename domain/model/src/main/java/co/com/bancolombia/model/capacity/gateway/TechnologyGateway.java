@@ -5,8 +5,11 @@ import co.com.bancolombia.model.capacity.Technology;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 public interface TechnologyGateway {
   Mono<Technology> associateTechnology(CapacityTechnology capacityTechnology);
   Flux<Technology> findByCapacityId(Long capacityId);
   Flux<Technology> findAll();
+  Mono<List<Long>> deleteTechnologiesByCapacity(Long capacityId);
 }

@@ -6,6 +6,7 @@ import co.com.bancolombia.model.capacity.gateway.CapacityGateway;
 import co.com.bancolombia.r2dbc.entity.CapacityBootcampEntity;
 import co.com.bancolombia.r2dbc.entity.CapacityEntity;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -94,5 +95,24 @@ public class CapacityRepositoryAdapter implements CapacityGateway {
   public Mono<CapacityBootcamp> findByBootcampIdAndCapacityId(Long bootcampId, Long capacityId) {
     return capacityBootcampRepository.findByBootcampIdAndCapacityId(bootcampId, capacityId)
       .map(entity -> new CapacityBootcamp(entity.getBootcampId(), entity.getCapacityId()));
+  }
+
+  @Override
+  public Mono<Long> countBootcampsByCapacityId(Long capacityId) {
+    return capacityBootcampRepository.countByCapacityId(capacityId);
+  }
+
+  @Override
+  @Transactional
+  public Mono<Void> delete(Long capacityId) {
+    return capacityRepository.deleteById(capacityId)
+      .then();
+  }
+
+  @Override
+  @Transactional
+  public Mono<Void> deleteCapacityBootcampRelation(Long capacityId, Long bootcampId) {
+    return capacityBootcampRepository.deleteByCapacityIdAndBootcampId(capacityId, bootcampId)
+      .then();
   }
 }
