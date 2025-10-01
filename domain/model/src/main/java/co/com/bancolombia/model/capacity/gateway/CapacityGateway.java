@@ -14,4 +14,7 @@ public interface CapacityGateway {
   Flux<Capacity> findByBootcamp(Long bootcampId);
   Mono<CapacityBootcamp> associateCapacityBootcamp(CapacityBootcamp capacityBootcamp);
   Mono<CapacityBootcamp> findByBootcampIdAndCapacityId(Long bootcampId, Long capacityId);
+  Mono<Long> countBootcampsByCapacityId(Long capacityId);
+  Mono<Void> delete(Long capacityId);
+  Mono<Void> deleteCapacityBootcampRelation(Long capacityId, Long bootcampId);
 }

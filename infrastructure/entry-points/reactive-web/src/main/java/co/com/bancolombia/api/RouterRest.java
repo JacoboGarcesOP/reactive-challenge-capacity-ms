@@ -18,6 +18,7 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import static org.springframework.web.reactive.function.server.RequestPredicates.DELETE;
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
@@ -198,6 +199,56 @@ public class RouterRest {
 
   @Bean
   @RouterOperation(
+    path = "/v1/api/capacity/ids",
+    produces = {MediaType.APPLICATION_JSON_VALUE},
+    method = RequestMethod.GET,
+    beanClass = Handler.class,
+    beanMethod = "getAllCapacityIds",
+    operation = @Operation(
+      operationId = "getAllCapacityIds",
+      summary = "Obtener todos los IDs de capacidades",
+      description = "Retorna una lista de IDs de todas las capacidades registradas. Maneja errores de dominio, negocio e internos.",
+      tags = {"Capacity Management"},
+      responses = {
+        @ApiResponse(responseCode = "200", description = "IDs obtenidos exitosamente",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Success Response",
+              summary = "Lista de IDs de capacidades",
+              value = "[1, 2, 3, 4]"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "400", description = "Error de dominio o negocio",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Business Error",
+              summary = "Error de negocio",
+              value = "{\n  \"error\": \"BUSINESS_ERROR\",\n  \"message\": \"No capacities found\"\n}"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Internal Error",
+              summary = "Error interno",
+              value = "{\n  \"error\": \"INTERNAL_ERROR\",\n  \"message\": \"An unexpected error occurred\"\n}"
+            )
+          )
+        )
+      }
+    )
+  )
+  public RouterFunction<ServerResponse> getAllCapacityIdsRoute(Handler handler) {
+    return route(GET(BASE_URL + "/capacity/ids"), handler::getAllCapacityIds);
+  }
+
+  @Bean
+  @RouterOperation(
     path = "/v1/api/capacity/associate",
     produces = {MediaType.APPLICATION_JSON_VALUE},
     method = RequestMethod.POST,
@@ -359,5 +410,74 @@ public class RouterRest {
   )
   public RouterFunction<ServerResponse> getCapacitiesByBootcampRoute(Handler handler) {
     return route(GET(BASE_URL + "/capacity/bootcamp/{bootcampId}"), handler::getCapacitiesByBootcamp);
+  }
+
+  @Bean
+  @RouterOperation(
+    path = "/v1/api/capacity/bootcamp/{bootcampId}",
+    produces = {MediaType.APPLICATION_JSON_VALUE},
+    method = RequestMethod.DELETE,
+    beanClass = Handler.class,
+    beanMethod = "deleteCapacitiesByBootcamp",
+    operation = @Operation(
+      operationId = "deleteCapacitiesByBootcamp",
+      summary = "Eliminar capacidades por bootcamp",
+      description = "Elimina todas las capacidades asociadas a un bootcamp específico. " +
+        "Si una capacidad solo está asociada al bootcamp dado, se elimina completamente. " +
+        "Si está asociada a otros bootcamps, solo se elimina la relación. " +
+        "Maneja errores de dominio, negocio e internos.",
+      tags = {"Capacity Management"},
+      parameters = {
+        @Parameter(
+          name = "bootcampId", 
+          description = "ID del bootcamp para eliminar sus capacidades", 
+          example = "100", 
+          required = true,
+          in = ParameterIn.PATH,
+          schema = @Schema(type = "integer", format = "int64")
+        )
+      },
+      responses = {
+        @ApiResponse(responseCode = "200", description = "Capacidades eliminadas exitosamente",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Success Response",
+              summary = "Lista de IDs de capacidades eliminadas",
+              value = "[1, 2, 3]"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "400", description = "Error de dominio o negocio",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Business Error",
+              summary = "Error de negocio",
+              value = "{\n" +
+                "  \"error\": \"BUSINESS_ERROR\",\n" +
+                "  \"message\": \"Bootcamp has not been found. Bootcamp id: 100\"\n" +
+                "}"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Internal Error",
+              summary = "Error interno",
+              value = "{\n" +
+                "  \"error\": \"INTERNAL_ERROR\",\n" +
+                "  \"message\": \"An unexpected error occurred\"\n" +
+                "}"
+            )
+          )
+        )
+      }
+    )
+  )
+  public RouterFunction<ServerResponse> deleteCapacitiesByBootcampRoute(Handler handler) {
+    return route(DELETE(BASE_URL + "/capacity/bootcamp/{bootcampId}"), handler::deleteCapacitiesByBootcamp);
   }
 }
