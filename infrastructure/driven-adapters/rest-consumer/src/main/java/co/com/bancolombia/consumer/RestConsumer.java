@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatusCode;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class RestConsumer implements TechnologyGateway {
@@ -60,6 +62,19 @@ public class RestConsumer implements TechnologyGateway {
       .onStatus(HttpStatusCode::is5xxServerError, this::map5xx)
       .bodyToFlux(ObjectResponse.class)
       .map(resp -> new Technology(resp.getTechnologyId(), resp.getName(), resp.getDescription()));
+  }
+
+  @CircuitBreaker(name = "deleteTechnologiesByCapacity")
+  @Override
+  public Mono<List<Long>> deleteTechnologiesByCapacity(Long capacityId) {
+    return client
+      .delete()
+      .uri("/capacity/" + capacityId)
+      .retrieve()
+      .onStatus(HttpStatusCode::is4xxClientError, this::map4xx)
+      .onStatus(HttpStatusCode::is5xxServerError, this::map5xx)
+      .bodyToMono(Long[].class)
+      .map(technologyIds -> List.of(technologyIds));
   }
 
   private Mono<? extends Throwable> map4xx(ClientResponse response) {

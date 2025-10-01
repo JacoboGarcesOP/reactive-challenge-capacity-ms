@@ -6,4 +6,6 @@ import reactor.core.publisher.Mono;
 
 public interface CapacityBootcampRepository extends ReactiveCrudRepository<CapacityBootcampEntity, Long> {
   Mono<CapacityBootcampEntity> findByBootcampIdAndCapacityId(Long bootcampId, Long capacityId);
+  Mono<Long> countByCapacityId(Long capacityId);
+  Mono<Void> deleteByCapacityIdAndBootcampId(Long capacityId, Long bootcampId);
 }

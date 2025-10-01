@@ -4,11 +4,8 @@ package co.com.bancolombia.api;
 import co.com.bancolombia.api.request.AssociateCapacityWithBootcampRequest;
 import co.com.bancolombia.api.response.ErrorResponse;
 import co.com.bancolombia.model.capacity.exception.DomainException;
-import co.com.bancolombia.usecase.AssociateCapacityWithBootcampUseCase;
-import co.com.bancolombia.usecase.CreateCapacityUseCase;
+import co.com.bancolombia.usecase.*;
 import co.com.bancolombia.api.request.CreateCapacityRequest;
-import co.com.bancolombia.usecase.GetCapacityByBootcampUseCase;
-import co.com.bancolombia.usecase.GetCapacityUseCase;
 import co.com.bancolombia.usecase.command.AssociateCapacityWithBootcampCommand;
 import co.com.bancolombia.usecase.command.CreateCapacityCommand;
 import co.com.bancolombia.usecase.exception.BussinessException;
@@ -19,7 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import jakarta.validation.ConstraintViolation;
@@ -42,6 +38,8 @@ public class Handler {
   private final GetCapacityUseCase getCapacityUseCase;
   private final AssociateCapacityWithBootcampUseCase associateCapacityWithBootcampUseCase;
   private final GetCapacityByBootcampUseCase getCapacityByBootcampUseCase;
+  private final GetAllCapacityIdsUseCase getAllCapacityIdsUseCase;
+  private final DeleteCapacityUseCase deleteCapacityUseCase;
   private final Validator validator;
 
   public Mono<ServerResponse> createCapacity(ServerRequest serverRequest) {
@@ -71,6 +69,16 @@ public class Handler {
       .doOnError(error -> log.error("Error retrieving capacities", error));
   }
 
+  public Mono<ServerResponse> getAllCapacityIds(ServerRequest serverRequest) {
+    return getAllCapacityIdsUseCase.execute()
+      .collectList()
+      .flatMap(this::buildSuccessResponse)
+      .onErrorResume(DomainException.class, this::handleDomainException)
+      .onErrorResume(BussinessException.class, this::handleBusinessException)
+      .onErrorResume(Exception.class, this::handleGenericException)
+      .doOnError(error -> log.error("Error retrieving capacity ids", error));
+  }
+
   public Mono<ServerResponse> getCapacitiesByBootcamp(ServerRequest serverRequest) {
     Long bootcampId = Long.parseLong(serverRequest.pathVariable("bootcampId"));
     
@@ -94,6 +102,16 @@ public class Handler {
       .onErrorResume(BussinessException.class, this::handleBusinessException)
       .onErrorResume(Exception.class, this::handleGenericException)
       .doOnError(error -> log.error(GENERIC_ERROR_MESSAGE, error));
+  }
+
+  public Mono<ServerResponse> deleteCapacitiesByBootcamp(ServerRequest serverRequest) {
+    return Mono.fromCallable(() -> Long.parseLong(serverRequest.pathVariable("bootcampId")))
+      .flatMap(deleteCapacityUseCase::execute)
+      .flatMap(this::buildSuccessResponse)
+      .onErrorResume(DomainException.class, this::handleDomainException)
+      .onErrorResume(BussinessException.class, this::handleBusinessException)
+      .onErrorResume(Exception.class, this::handleGenericException)
+      .doOnError(error -> log.error("Error deleting capacities by bootcamp", error));
   }
 
   private void validateAssociateRequest(AssociateCapacityWithBootcampRequest request) {
